@@ -7,16 +7,16 @@ A modern, responsive smart home monitoring and control interface built with HTML
 ## 📸 Screenshots
 
 ### 📍 Overview
-![Overview](.eco/screenshots/overview.jpg)
+![Overview](./overview.jpg)
 
 ### ⚡ Energy Monitoring
-![Energy](.eco/screenshots/energy.jpg)
+![Energy](./energy.jpg)
 
 ### 🍃 Environment Tracking
-![Environment](.eco/screenshots/environment.jpg)
+![Environment](./environment.jpg)
 
 ### 📊 Insights & Eco Tips
-![Insights](.eco/screenshots/insights.jpg)
+![Insights](./insights.jpg)
 
 > 💡 You can use the above images by saving your screenshots in a `screenshots/` folder in your GitHub repo.
 
