@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Smart Home Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f9fafb;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        .header {
+            background: white;
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            font-weight: bold;
+            color: #111827;
+        }
+        
+        .header p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .container {
+            padding: 24px 16px;
+        }
+        
+        .eco-score {
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            border-radius: 12px;
+            padding: 24px;
+            color: white;
+            margin-bottom: 24px;
+        }
+        
+        .eco-score-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .eco-score h2 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .eco-score .score {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .eco-score .status {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .grid {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .grid-1 {
+            grid-template-columns: 1fr;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f3f4f6;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .icon-red { background: #fef2f2; color: #dc2626; }
+        .icon-blue { background: #eff6ff; color: #2563eb; }
+        .icon-yellow { background: #fffbeb; color: #d97706; }
+        .icon-green { background: #f0fdf4; color: #16a34a; }
+        
+        .card h3 {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #111827;
+        }
+        
+        .card .unit {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: normal;
+        }
+        
+        .trend {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            gap: 4px;
+        }
+        
+        .trend.up { color: #dc2626; }
+        .trend.down { color: #16a34a; }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .alert-warning {
+            background: #fffbeb;
+            border: 1px solid #fed7aa;
+            color: #92400e;
+        }
+        
+        .alert-danger {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin-top: 16px;
+        }
+        
+        .navigation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            padding: 8px 16px;
+            z-index: 50;
+        }
+        
+        .nav-items {
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #6b7280;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .nav-item.active {
+            color: #2563eb;
+            background: #eff6ff;
+        }
+        
+        .nav-item:hover {
+            color: #111827;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-label {
+            font-size: 12px;
+        }
+        
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .control-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .toggle {
+            width: 40px;
+            height: 24px;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .toggle.on {
+            background: #10b981;
+        }
+        
+        .toggle.off {
+            background: #d1d5db;
+        }
+        
+        .toggle-slider {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+            top: 4px;
+            transition: transform 0.2s;
+        }
+        
+        .toggle.on .toggle-slider {
+            transform: translateX(20px);
+        }
+        
+        .toggle.off .toggle-slider {
+            transform: translateX(4px);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .recommendation {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .rec-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .rec-icon {
+            color: #16a34a;
+            font-size: 20px;
+            margin-top: 2px;
+        }
+        
+        .rec-content h4 {
+            color: #14532d;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .rec-content p {
+            color: #166534;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .impact-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .impact-high { background: #fef2f2; color: #991b1b; }
+        .impact-medium { background: #fffbeb; color: #92400e; }
+        .impact-low { background: #f0fdf4; color: #166534; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div>
+                <h1>Smart Home</h1>
+                <p>Last updated: <span id="timestamp">--:--:--</span></p>
+            </div>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span style="font-size: 14px; color: #6b7280;">Live</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Overview Section -->
+        <div id="overview-section">
+            <div class="eco-score">
+                <div class="eco-score-content">
+                    <div>
+                        <h2>Eco Score</h2>
+                        <div class="score"><span id="eco-score">85</span>/100</div>
+                        <div class="status" id="eco-status">Excellent!</div>
+                    </div>
+                    <div style="font-size: 48px; opacity: 0.8;">🌱</div>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon icon-red">🌡️</div>
+                        <div class="trend up" id="temp-trend">
+                            <span>↗</span> 2%
+                        </div>
+                    </div>
+                    <h3>Temperature</h3>
+                    <div class="value"><span id="temperature">22.5</span><span class="unit">°C</span></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon icon-blue">💧</div>
+                    </div>
+                    <h3>Humidity</h3>
+                    <div class="value"><span id="humidity">45</span><span class="unit">%</span></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon icon-yellow">⚡</div>
+                        <div class="trend up">
+                            <span>↗</span> 5%
+                        </div>
+                    </div>
+                    <h3>Energy Usage</h3>
+                    <div class="value"><span id="energy-usage">2.4</span><span class="unit">kW</span></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon icon-green">🌪️</div>
+                        <div class="trend down">
+                            <span>↘</span> 2%
+                        </div>
+                    </div>
+                    <h3>Air Quality</h3>
+                    <div class="value"><span id="air-quality">85</span><span class="unit">AQI</span></div>
+                </div>
+            </div>
+
+            <div id="alerts-container" style="margin-top: 24px;">
+                <h3 style="margin-bottom: 16px; color: #111827; font-size: 18px;">Alerts</h3>
+                <div id="alerts-list"></div>
+            </div>
+        </div>
+
+        <!-- Energy Section -->
+        <div id="energy-section" class="hidden">
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon icon-red">⚡</div>
+                    </div>
+                    <h3>Current Usage</h3>
+                    <div class="value"><span id="current-usage">2.4</span><span class="unit">kW</span></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon icon-green">🔋</div>
+                    </div>
+                    <h3>Solar Generation</h3>
+                    <div class="value"><span id="solar-generation">3.2</span><span class="unit">kW</span></div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 24px;">
+                <h3 style="margin-bottom: 16px; color: #111827; font-size: 18px;">Smart Controls</h3>
+                <div class="control-item">
+                    <div class="control-left">
+                        <span>💡</span>
+                        <span>Living Room Lights</span>
+                    </div>
+                    <div class="toggle on" onclick="toggleDevice(this)">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+                <div class="control-item">
+                    <div class="control-left">
+                        <span>❄️</span>
+                        <span>AC System</span>
+                    </div>
+                    <div class="toggle off" onclick="toggleDevice(this)">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+                <div class="control-item">
+                    <div class="control-left">
+                        <span>🌀</span>
+                        <span>Ceiling Fan</span>
+                    </div>
+                    <div class="toggle on" onclick="toggleDevice(this)">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+                <div class="control-item">
+                    <div class="control-left">
+                        <span>🔥</span>
+                        <span>Water Heater</span>
+                    </div>
+                    <div class="toggle off" onclick="toggleDevice(this)">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Environment Section -->
+        <div id="environment-section" class="hidden">
+            <div class="grid grid-1">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon icon-red">🌡️</div>
+                    </div>
+                    <h3>Indoor Temperature</h3>
+                    <div class="value"><span id="env-temperature">22.5</span><span class="unit">°C</span></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon icon-blue">💧</div>
+                    </div>
+                    <h3>Humidity Level</h3>
+                    <div class="value"><span id="env-humidity">45</span><span class="unit">%</span></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon icon-green">🌪️</div>
+                    </div>
+                    <h3>Air Quality Index</h3>
+                    <div class="value"><span id="env-air-quality">85</span><span class="unit">AQI</span></div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 24px;">
+                <h3 style="margin-bottom: 16px; color: #111827; font-size: 18px;">Environmental Trends</h3>
+                <div class="chart-container">
+                    <canvas id="environmentChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights Section -->
+        <div id="insights-section" class="hidden">
+            <div class="eco-score" style="background: linear-gradient(135deg, #22c55e, #3b82f6);">
+                <div class="eco-score-content">
+                    <div>
+                        <h2>Monthly Savings</h2>
+                        <div class="score">₹2,340</div>
+                        <div class="status">15% reduction from last month</div>
+                    </div>
+                    <div style="font-size: 48px; opacity: 0.8;">💰</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 16px; color: #111827; font-size: 18px;">Eco Recommendations</h3>
+                
+                <div class="recommendation">
+                    <div class="rec-header">
+                        <div class="rec-icon">🌱</div>
+                        <div class="rec-content">
+                            <h4>Optimize AC usage</h4>
+                            <p>Set temperature to 24°C to save 12% energy</p>
+                            <span class="impact-badge impact-high">High Impact</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recommendation">
+                    <div class="rec-header">
+                        <div class="rec-icon">🌱</div>
+                        <div class="rec-content">
+                            <h4>Use natural lighting</h4>
+                            <p>Turn off lights during daytime hours</p>
+                            <span class="impact-badge impact-medium">Medium Impact</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recommendation">
+                    <div class="rec-header">
+                        <div class="rec-icon">🌱</div>
+                        <div class="rec-content">
+                            <h4>Unplug devices</h4>
+                            <p>Reduce standby power consumption</p>
+                            <span class="impact-badge impact-low">Low Impact</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <div class="nav-items">
+            <div class="nav-item active" onclick="showSection('overview')">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-label">Overview</div>
+            </div>
+            <div class="nav-item" onclick="showSection('energy')">
+                <div class="nav-icon">⚡</div>
+                <div class="nav-label">Energy</div>
+            </div>
+            <div class="nav-item" onclick="showSection('environment')">
+                <div class="nav-icon">🌱</div>
+                <div class="nav-label">Environment</div>
+            </div>
+            <div class="nav-item" onclick="showSection('insights')">
+                <div class="nav-icon">📊</div>
+                <div class="nav-label">Insights</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = {
+            temperature: 22.5,
+            humidity: 45,
+            airQuality: 85,
+            energyUsage: 2.4,
+            solarGeneration: 3.2,
+            waterUsage: 180
+        };
+
+        let historicalData = [];
+        let environmentChart;
+
+        // Initialize the app
+        function init() {
+            updateDisplay();
+            initEnvironmentChart();
+            
+            // Update data every 3 seconds
+            setInterval(() => {
+                updateSensorData();
+                updateDisplay();
+                updateChart();
+            }, 3000);
+        }
+
+        // Simulate sensor data updates
+        function updateSensorData() {
+            currentData = {
+                temperature: 20 + Math.random() * 10,
+                humidity: 40 + Math.random() * 30,
+                airQuality: 70 + Math.random() * 30,
+                energyUsage: 1.5 + Math.random() * 3,
+                solarGeneration: Math.random() * 4,
+                waterUsage: 150 + Math.random() * 100
+            };
+            
+            // Add to historical data
+            const now = new Date();
+            historicalData.push({
+                time: now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0'),
+                ...currentData
+            });
+            
+            // Keep only last 10 data points
+            if (historicalData.length > 10) {
+                historicalData = historicalData.slice(-10);
+            }
+        }
+
+        // Update display with current data
+        function updateDisplay() {
+            const now = new Date();
+            document.getElementById('timestamp').textContent = now.toLocaleTimeString();
+            
+            // Update all sensor displays
+            document.getElementById('temperature').textContent = currentData.temperature.toFixed(1);
+            document.getElementById('humidity').textContent = currentData.humidity.toFixed(0);
+            document.getElementById('energy-usage').textContent = currentData.energyUsage.toFixed(1);
+            document.getElementById('air-quality').textContent = currentData.airQuality.toFixed(0);
+            
+            document.getElementById('current-usage').textContent = currentData.energyUsage.toFixed(1);
+            document.getElementById('solar-generation').textContent = currentData.solarGeneration.toFixed(1);
+            
+            document.getElementById('env-temperature').textContent = currentData.temperature.toFixed(1);
+            document.getElementById('env-humidity').textContent = currentData.humidity.toFixed(0);
+            document.getElementById('env-air-quality').textContent = currentData.airQuality.toFixed(0);
+            
+            // Calculate and update eco score
+            const ecoScore = Math.round(
+                (currentData.airQuality * 0.3 + 
+                 (currentData.solarGeneration / currentData.energyUsage) * 30 * 0.3 + 
+                 (100 - currentData.energyUsage * 10) * 0.4)
+            );
+            
+            document.getElementById('eco-score').textContent = ecoScore;
+            document.getElementById('eco-status').textContent = 
+                ecoScore >= 80 ? 'Excellent!' : ecoScore >= 60 ? 'Good' : 'Needs Improvement';
+            
+            // Update alerts
+            updateAlerts();
+        }
+
+        // Update alerts based on current data
+        function updateAlerts() {
+            const alertsList = document.getElementById('alerts-list');
+            const alerts = [];
+            
+            if (currentData.temperature > 26) {
+                alerts.push({ type: 'warning', message: 'High temperature detected', icon: '🌡️' });
+            }
+            if (currentData.humidity > 70) {
+                alerts.push({ type: 'warning', message: 'High humidity levels', icon: '💧' });
+            }
+            if (currentData.airQuality < 75) {
+                alerts.push({ type: 'danger', message: 'Poor air quality', icon: '🌪️' });
+            }
+            if (currentData.energyUsage > 3.5) {
+                alerts.push({ type: 'danger', message: 'High energy consumption', icon: '⚡' });
+            }
+            
+            alertsList.innerHTML = '';
+            alerts.forEach(alert => {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${alert.type}`;
+                alertDiv.innerHTML = `
+                    <span style="font-size: 16px;">${alert.icon}</span>
+                    <span>${alert.message}</span>
+                `;
+                alertsList.appendChild(alertDiv);
+            });
+        }
+
+        // Initialize environment chart
+        function initEnvironmentChart() {
+            const ctx = document.getElementById('environmentChart').getContext('2d');
+            environmentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Temperature (°C)',
+                            data: [],
+                            borderColor: '#dc2626',
+                            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Humidity (%)',
+                            data: [],
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Air Quality',
+                            data: [],
+                            borderColor: '#16a34a',
+                            backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update chart with new data
+        function updateChart() {
+            if (environmentChart && historicalData.length > 0) {
+                environmentChart.data.labels = historicalData.map(d => d.time);
+                environmentChart.data.datasets[0].data = historicalData.map(d => d.temperature);
+                environmentChart.data.datasets[1].data = historicalData.map(d => d.humidity);
+                environmentChart.data.datasets[2].data = historicalData.map(d => d.airQuality);
+                environmentChart.update('none');
+            }
+        }
+
+        // Show different sections
+        function showSection(section) {
+            // Hide all sections
+            const sections = ['overview', 'energy', 'environment', 'insights'];
+            sections.forEach(s => {
+                document.getElementById(`${s}-section`).classList.add('hidden');
+            });
+            
+            // Show selected section
+            document.getElementById(`${section}-section`).classList.remove('hidden');
+            
+            // Update navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+        }
+
+        // Toggle device controls
+        function toggleDevice(element) {
+            if (element.classList.contains('on')) {
+                element.classList.remove('on');
+                element.classList.add('off');
+            } else {
+                element.classList.remove('off');
+                element.classList.add('on');
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
